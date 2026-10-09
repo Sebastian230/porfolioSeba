@@ -32,9 +32,9 @@ const VIOLETA = 0x2c1f7a;   // violeta del horizonte: el piso se funde con el ci
 const RUTA_Z = 30, RUTA_ANCHO = 13;          // ruta principal
 const CRUCE_X = -80;                         // ruta que cruza, entre el granero y el maizal
 const BORDE_N = RUTA_Z - RUTA_ANCHO / 2, BORDE_S = RUTA_Z + RUTA_ANCHO / 2;
-const ALTO_GRANERO = 26;
-const PASTO = { x: 2, z: 3, rx: 42, rz: 36 };
-const POZO = { x: 38, z: 10, r: 3.8 };       // pozo de agua, ancho como para tirarle calabazas
+const ALTO_GRANERO = 30;
+const PASTO = { x: 2, z: 3, rx: 47, rz: 40 };
+const POZO = { x: 43, z: 9, r: 3.8 };       // pozo de agua, ancho como para tirarle calabazas
 // el maizal sigue mucho más allá de donde llega el ovni, para que no se le vea el final
 const MAIZ = { x0: -540, x1: CRUCE_X + 6, z0: -430, z1: 132 };
 const MARCA = { x: -182, z: -20, ancho: 150, fondo: 84 };  // el nombre escrito en el maizal
@@ -56,7 +56,7 @@ const PIEDRAS = PROYECTOS.map((_, i) => ({ x: i % 2 ? 126 : 72, z: 24 - i * 30 }
 const LIMITES = { x0: -214, x1: 156, z0: Math.min(-74, PIEDRAS[PIEDRAS.length - 1].z - 14), z1: 62 };
 // El granero está girado: la parte de atrás se va hacia la izquierda y deja ver el techo
 const GIRO_GRANERO = 0.65, SEN = Math.sin(GIRO_GRANERO), COS = Math.cos(GIRO_GRANERO);
-const PUERTA = { x: 17.4 * SEN, z: 17.4 * COS };
+const PUERTA = { x: 20.1 * SEN, z: 20.1 * COS };
 const ENTRADA_Z = 40;
 // sendero de tierra: de la puerta del granero hasta el camino
 const SENDERO = [[PUERTA.x, PUERTA.z], [PUERTA.x + 13, ENTRADA_Z], [xDelCamino(ENTRADA_Z), ENTRADA_Z]];
@@ -95,15 +95,16 @@ addEventListener("resize", ajustarTamano);
 ajustarTamano();
 
 // ---------- Luces ----------
-escena.add(new THREE.HemisphereLight(0xc4bcff, 0x1a1440, 1.7));
-const sol = new THREE.DirectionalLight(0xfff4e0, 2.4);
+const luzCielo = new THREE.HemisphereLight(0xc4bcff, 0x1a1440, 1.25);
+escena.add(luzCielo);
+const sol = new THREE.DirectionalLight(0xfff4e0, 1.7);
 sol.castShadow = true;
 sol.shadow.mapSize.set(1024, 1024);
 Object.assign(sol.shadow.camera, { left: -55, right: 55, top: 55, bottom: -55, near: 1, far: 200 });
 sol.shadow.bias = -0.001;
 escena.add(sol, sol.target);
 
-const luzOvni = new THREE.SpotLight(0x4dff7c, 9, 0, 0.5, 0.8, 0); // luz verde del ovni
+const luzOvni = new THREE.SpotLight(0xffd75e, 9, 0, 0.5, 0.8, 0); // luz amarilla del ovni
 escena.add(luzOvni, luzOvni.target);
 
 // ---------- Piso ----------
@@ -184,7 +185,7 @@ function crearPasto(p, cantidad, libre = () => true) {
 }
 const enGranero = (x, z, margen = 0) => {             // en las coordenadas del granero girado
   const lx = x * COS - z * SEN, lz = x * SEN + z * COS;
-  return Math.abs(lx) < 17 + margen && Math.abs(lz) < 17.8 + margen;
+  return Math.abs(lx) < 19.6 + margen && Math.abs(lz) < 20.5 + margen;
 };
 crearPasto(PASTO, 14000, (x, z) =>
   !enGranero(x, z) &&
@@ -207,14 +208,14 @@ const texRuta = (() => {
 })();
 const texTierra = (() => {
   const [cv, g] = lienzo(256, 256);
-  g.fillStyle = "#7a5a36"; g.fillRect(0, 0, 256, 256);
+  g.fillStyle = "#4b3520"; g.fillRect(0, 0, 256, 256);
   for (let i = 0; i < 900; i++) {          // piedritas y manchas
-    g.fillStyle = ["rgba(50,32,16,.35)", "rgba(170,135,90,.3)", "rgba(95,68,40,.5)"][i % 3];
+    g.fillStyle = ["rgba(30,18,8,.4)", "rgba(110,84,54,.3)", "rgba(60,42,24,.5)"][i % 3];
     g.fillRect(Math.random() * 256, Math.random() * 256, 2 + Math.random() * 4, 2 + Math.random() * 3);
   }
-  g.fillStyle = "rgba(55,36,18,.45)";      // huellas de ruedas
+  g.fillStyle = "rgba(28,18,8,.5)";       // huellas de ruedas
   g.fillRect(0, 70, 256, 22); g.fillRect(0, 164, 256, 22);
-  g.fillStyle = "#4a7a2f";                 // bordes con pasto
+  g.fillStyle = "#234a22";                 // bordes con pasto
   for (let x = 0; x < 256; x += 6) { g.fillRect(x, 0, 6, 4 + Math.random() * 9); g.fillRect(x, 256 - 4 - Math.random() * 9, 6, 14); }
   const t = textura(cv);
   t.wrapS = THREE.RepeatWrapping;
@@ -235,7 +236,7 @@ function ruta(x1, z1, x2, z2, base = texRuta) {
 }
 // camino de tierra en zigzag, entre el granero y el maizal
 {
-  const tierra = new THREE.MeshLambertMaterial({ color: 0x7a5a36 });
+  const tierra = new THREE.MeshLambertMaterial({ color: 0x4b3520 });
   ZIGZAG.forEach(([z, d], i) => {
     if (i) ruta(CRUCE_X + ZIGZAG[i - 1][1], ZIGZAG[i - 1][0], CRUCE_X + d, z, texTierra);
     const codo = new THREE.Mesh(new THREE.CircleGeometry(RUTA_ANCHO / 2, 20), tierra);   // tapa el hueco de cada curva
@@ -247,7 +248,7 @@ function ruta(x1, z1, x2, z2, base = texRuta) {
 }
 // sendero de tierra: de la puerta del granero al camino
 {
-  const tierra = new THREE.MeshLambertMaterial({ color: 0x7a5a36 });
+  const tierra = new THREE.MeshLambertMaterial({ color: 0x4b3520 });
   SENDERO.forEach(([x, z], i) => {
     const codo = new THREE.Mesh(new THREE.CircleGeometry(3, 16), tierra);
     codo.rotation.x = -Math.PI / 2;
@@ -267,7 +268,7 @@ function ruta(x1, z1, x2, z2, base = texRuta) {
 
 // ---------- Cerco de madera a los dos costados del camino ----------
 {
-  const madera = new THREE.MeshLambertMaterial({ color: 0x9a6a3a, flatShading: true });
+  const madera = new THREE.MeshLambertMaterial({ color: 0x7a5230, flatShading: true });
   const piezas = [];                                  // [x, y, z, ancho, alto, fondo, giro]
   const tramo = (xa, za, xb, zb) => {
     const largo = Math.hypot(xb - xa, zb - za), n = Math.max(1, Math.round(largo / 3.4));
@@ -418,7 +419,7 @@ function crearMaizal() {
   const cara = () => new THREE.PlaneGeometry(2.4, 4.2).translate(0, 2.1, 0);
   const geo = mergeGeometries([cara(), cara().rotateY(Math.PI / 2)]);
   // sin luces: es un dibujo 2D, se ve igual de los dos lados y es más liviano
-  const mat = new THREE.MeshBasicMaterial({ map: textura(cv), alphaTest: 0.5, side: THREE.DoubleSide, color: 0xcfcfe6 });
+  const mat = new THREE.MeshBasicMaterial({ map: textura(cv), alphaTest: 0.5, side: THREE.DoubleSide, color: 0xa9a9c4 });
 
   const o = new THREE.Object3D(), c = new THREE.Color(), matrices = [], colores = [];
   const paso = 2.3;
@@ -707,18 +708,18 @@ function moverCielo(dt, t) {
 // Va sobre la caída izquierda del techo (medidas en las unidades del modelo del granero).
 function decorarGranero(granero) {
   const LUNA = "#f4f1de", TABLA = "#1d1a2b";
-  const [cv, g] = lienzo(1024, 580);
-  g.fillStyle = TABLA; g.fillRect(0, 0, 1024, 580);
-  g.strokeStyle = LUNA; g.lineWidth = 14; g.strokeRect(16, 16, 992, 548);
-  // luna creciente: un disco al que se le tapa un costado
-  g.fillStyle = LUNA;  g.beginPath(); g.arc(512, 170, 108, 0, 6.3); g.fill();
-  g.fillStyle = TABLA; g.beginPath(); g.arc(566, 140, 96, 0, 6.3); g.fill();
+  const [cv, g] = lienzo(1024, 380);
+  g.fillStyle = TABLA; g.fillRect(0, 0, 1024, 380);
+  g.strokeStyle = LUNA; g.lineWidth = 14; g.strokeRect(16, 16, 992, 348);
+  // luna creciente grande, en el mismo renglón que las letras
+  g.fillStyle = LUNA;  g.beginPath(); g.arc(170, 190, 132, 0, 6.3); g.fill();
+  g.fillStyle = TABLA; g.beginPath(); g.arc(236, 152, 118, 0, 6.3); g.fill();
   g.fillStyle = LUNA; g.textAlign = "center"; g.textBaseline = "middle";
   let tam = 300;
-  do { g.font = `${tam}px Bangers, Impact, "Arial Black", sans-serif`; tam -= 4; } while (g.measureText("VETUSMOON").width > 900 && tam > 60);
-  g.fillText("VETUSMOON", 512, 420);
+  do { g.font = `${tam}px Bangers, Impact, "Arial Black", sans-serif`; tam -= 4; } while (g.measureText("VETUSMOON").width > 690 && tam > 60);
+  g.fillText("VETUSMOON", 640, 200);
 
-  const cartel = new THREE.Mesh(new THREE.PlaneGeometry(7.4, 4.2), new THREE.MeshBasicMaterial({ map: textura(cv) }));
+  const cartel = new THREE.Mesh(new THREE.PlaneGeometry(7.5, 2.78), new THREE.MeshBasicMaterial({ map: textura(cv) }));
   const alLargo = new THREE.Vector3(0, 0, 1), cuestaArriba = new THREE.Vector3(0.7886, 0.6149, 0);
   const haciaAfuera = new THREE.Vector3().crossVectors(alLargo, cuestaArriba);
   cartel.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(alLargo, cuestaArriba, haciaAfuera));
@@ -761,6 +762,75 @@ function nubeDePolvo(cantidad, tamano, opacidad) {
   };
 }
 const polvo = [nubeDePolvo(900, 0.55, 0.75), nubeDePolvo(300, 1.1, 0.45)];
+
+// ---------- Rayos en el horizonte: cada 3 segundos uno doble, cada 5 uno triple ----------
+const texRayos = [1, 2, 3, 4].map(() => {
+  const [cv, g] = lienzo(256, 512);
+  const rama = (x, y, hasta, grosor) => {               // baja en zigzag; a veces se abre una rama
+    const pts = [[x, y]];
+    while (y < hasta) {
+      x += (Math.random() - 0.5) * 60; y += 22 + Math.random() * 30;
+      pts.push([x, y]);
+      if (grosor > 3 && Math.random() < 0.22) rama(x, y, Math.min(512, y + 90 + Math.random() * 120), grosor * 0.5);
+    }
+    const trazo = (color, ancho, brillo) => {
+      g.strokeStyle = color; g.lineWidth = ancho; g.shadowColor = "#39c8ff"; g.shadowBlur = brillo;
+      g.beginPath(); pts.forEach(([px, py], i) => i ? g.lineTo(px, py) : g.moveTo(px, py)); g.stroke();
+    };
+    trazo("#5fd6ff", grosor * 2.2, 26);
+    trazo("#ffffff", grosor, 0);
+  };
+  g.lineJoin = g.lineCap = "round";
+  rama(128, 0, 512, 6);
+  return textura(cv);
+});
+const rayos = [...Array(10).keys()].map(() => {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(75, 150).translate(0, 75, 0),
+    new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+  m.visible = false;
+  m.userData.vida = 0;
+  escena.add(m);
+  return m;
+});
+const resplandor = new THREE.Sprite(new THREE.SpriteMaterial({ map: polvoTex, color: 0x9fb8ff, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+resplandor.scale.set(620, 300, 1);
+escena.add(resplandor);
+const NIEBLA_BASE = new THREE.Color(VIOLETA), NIEBLA_RAYO = new THREE.Color(0x6f66d6);
+const rayosPendientes = [];
+let tanda3 = 0, tanda5 = 0, destello = 0;
+function moverRayos(dt, t) {
+  const caer = cuantos => {                              // varios rayos seguidos, cerca uno del otro
+    for (let lugar = 0; lugar < 3; lugar++) {            // en tres lugares del horizonte a la vez
+      const x = mira.x + (lugar - 1) * 420 + (Math.random() - 0.5) * 300, demora = lugar * 0.09;
+      for (let i = 0; i < cuantos; i++) rayosPendientes.push({ en: t + demora + i * 0.17, x: x + (i - (cuantos - 1) / 2) * 80 + (Math.random() - 0.5) * 30 });
+    }
+  };
+  const n5 = Math.floor(t / 5), n3 = Math.floor(t / 3);
+  if (n5 !== tanda5) { tanda5 = n5; caer(3); }
+  if (n3 !== tanda3) { tanda3 = n3; if (n3 * 3 % 5) caer(2); }   // si coincide con el triple, gana el triple
+  for (let i = rayosPendientes.length - 1; i >= 0; i--) {
+    const p = rayosPendientes[i];
+    if (p.en > t) continue;
+    rayosPendientes.splice(i, 1);
+    const libre = rayos.find(r => r.userData.vida <= 0) ?? rayos[0];
+    libre.material.map = texRayos[Math.floor(Math.random() * texRayos.length)];
+    libre.material.needsUpdate = true;
+    libre.position.set(p.x, -4, mira.z - 850);
+    libre.scale.set(Math.random() < 0.5 ? 1 : -1, 0.8 + Math.random() * 0.5, 1);
+    libre.userData.vida = 0.16;
+    resplandor.position.set(p.x, 40, mira.z - 860);
+    destello = 1;
+  }
+  for (const r of rayos) {
+    r.userData.vida -= dt;
+    r.visible = r.userData.vida > 0;
+    r.material.opacity = Math.random() < 0.25 ? 0.4 : 1;
+  }
+  destello *= Math.pow(0.002, dt);
+  resplandor.material.opacity = destello * 0.7;
+  luzCielo.intensity = 1.25 + destello * 1.3;             // el relámpago ilumina un poco todo
+  escena.fog.color.lerpColors(NIEBLA_BASE, NIEBLA_RAYO, destello * 0.5);
+}
 
 // ---------- Vacas que pasean por el pasto ----------
 const vacas = [];
@@ -986,10 +1056,44 @@ function moverTrafico(dt) {
   }
 }
 
+// ---------- Esqueletos que pasan caminando por el camino: cada 30 segundos, uno para cada lado ----------
+const esqueletos = [];
+let faltaEsqueleto = 8;
+function moverEsqueletos(dt) {
+  if ((faltaEsqueleto -= dt) <= 0) {
+    faltaEsqueleto = 30;
+    for (const sentido of [1, -1]) {                    // +1 camina hacia el frente, -1 hacia el fondo
+      const e = crearCaminante(false);
+      e.obj.scale.multiplyScalar(1.5);
+      e.obj.traverse(p => { if (p.isMesh) p.castShadow = true; });
+      e.sentido = sentido;
+      e.z = THREE.MathUtils.clamp(mira.z - sentido * 130, -700, 280);
+      e.recorrido = 0;
+      escena.add(e.obj);
+      esqueletos.push(e);
+    }
+  }
+  for (let i = esqueletos.length - 1; i >= 0; i--) {
+    const e = esqueletos[i], avance = e.vel * dt;
+    e.z += e.sentido * avance;
+    e.recorrido += avance;
+    const lado = -e.sentido * 3;                         // cada uno por su mano
+    const x = xDelCamino(e.z) + lado, adelante = xDelCamino(e.z + e.sentido * 3) + lado;
+    e.obj.position.set(x, 0, e.z);
+    e.obj.rotation.y = -Math.atan2(e.sentido * 3, adelante - x);   // sigue las curvas del zigzag
+    e.animar(dt, e);
+    if (e.recorrido > 330) {
+      escena.remove(e.obj);
+      e.obj.traverse(p => p.geometry?.dispose());
+      esqueletos.splice(i, 1);
+    }
+  }
+}
+
 // ---------- Ovni y controles ----------
 const ovni = { x: Number(params.get("x") ?? 14), z: Number(params.get("z") ?? 50), vx: 0, vz: 0 };
 window.ovni = ovni;   // para pruebas desde la consola: ovni.x = 15; ovni.z = 12
-window.trafico = { lanzar: lanzarViajero, viajeros };   // para pruebas: trafico.lanzar()
+window.trafico = { lanzar: lanzarViajero, viajeros, esqueletos };   // para pruebas: trafico.lanzar()
 const mira = new THREE.Vector3(ovni.x, 0, ovni.z);
 const $ = id => document.getElementById(id);
 const ovniEl = $("ovni"), inclina = $("inclina"), pista = $("pista");
@@ -1136,8 +1240,8 @@ function cuadro() {
   camara.position.copy(mira).addScaledVector(CAM, zoom);
   camara.position.x += (Math.random() - .5) * temblor * 1.4;
   camara.position.y += (Math.random() - .5) * temblor * 1.4;
-  escena.fog.near = 40 * zoom;     // poca visibilidad: la niebla empieza cerca
-  escena.fog.far = 165 * zoom;
+  escena.fog.near = 75 * zoom;     // algo de niebla, pero se llega a ver el horizonte
+  escena.fog.far = 300 * zoom;
   camara.lookAt(mira.x + MIRA.x * zoom, MIRA.y * zoom, mira.z + MIRA.z * zoom);
   sol.position.set(mira.x - 40, 80, mira.z + 45);
   sol.target.position.copy(mira);
@@ -1178,6 +1282,8 @@ function cuadro() {
   if (listo && MOSTRAR.trafico) moverTrafico(dt);
   for (const mover of polvo) mover(t, mira.x, mira.z);
   moverCielo(dt, t);
+  moverRayos(dt, t);
+  if (listo) moverEsqueletos(dt);
 
   // cartelito de ayuda
   let texto = "";

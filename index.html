@@ -30,7 +30,7 @@
     transition: opacity .7s ease .2s, visibility 0s linear .9s;
   }
   /* el nombre en blanco, girando en círculo */
-  #preloader svg { width: min(46vmin, 300px); height: auto; animation: girar 9s linear infinite; }
+  #preloader svg { width: min(30vmin, 190px); height: auto; animation: girar 9s linear infinite; }
   #preloader text { fill: #fff; font: 700 18px "Trebuchet MS", "Segoe UI", system-ui, sans-serif; }
   #preloader p { position: absolute; font-size: 12px; letter-spacing: .3em; color: #fff; text-transform: uppercase; }
   #progreso { display: none; }
@@ -38,38 +38,36 @@
   body.listo #preloader { opacity: 0; visibility: hidden; }
 
   /* ---------- OVNI ---------- */
-  .ovni { width: 170px; height: 190px; pointer-events: none; }
-  #ovni { position: fixed; left: 0; top: 0; z-index: 50; margin: -162px 0 0 -85px;
-    transform-origin: 85px 162px; will-change: transform; }
+  .ovni { width: 210px; height: 190px; pointer-events: none; }
+  #ovni { position: fixed; left: 0; top: 0; z-index: 50; margin: -162px 0 0 -105px;
+    transform-origin: 105px 162px; will-change: transform; }
   .ovni .flota { position: absolute; inset: 0; animation: flotar 2.4s ease-in-out infinite; }
   .ovni .inclina { position: absolute; inset: 0; transform-origin: 50% 58px; }
   @keyframes flotar { 50% { transform: translateY(-7px); } }
 
-  /* luz verde en el piso */
-  .ovni .luz { position: absolute; left: 20px; top: 140px; width: 130px; height: 44px; border-radius: 50%;
-    background: radial-gradient(ellipse, rgba(90,255,130,.8), rgba(50,255,100,.25) 50%, transparent 70%);
+  /* luz amarilla en el piso */
+  .ovni .luz { position: absolute; left: 35px; top: 140px; width: 140px; height: 46px; border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(255,222,100,.8), rgba(255,200,60,.25) 50%, transparent 70%);
     filter: blur(3px); animation: pulso 1.6s ease-in-out infinite; }
-  .ovni .rayo { position: absolute; left: 25px; top: 62px; width: 120px; height: 100px;
+  .ovni .rayo { position: absolute; left: 40px; top: 64px; width: 130px; height: 100px;
     clip-path: polygon(34% 0, 66% 0, 100% 100%, 0 100%);
-    background: linear-gradient(rgba(90,255,130,.55), rgba(90,255,130,.04)); }
+    background: linear-gradient(rgba(255,225,110,.5), rgba(255,225,110,.04)); }
   @keyframes pulso { 50% { opacity: .6; transform: scale(.92); } }
 
   /* platillo gris plata */
-  .ovni .disco { position: absolute; left: 0; top: 30px; width: 170px; height: 56px; border-radius: 50%;
+  .ovni .disco { position: absolute; left: 0; top: 26px; width: 210px; height: 66px; border-radius: 50%;
     background: radial-gradient(ellipse at 50% 26%, #ffffff, #e2e6ea 22%, #b4bac1 48%, #858c94 72%, #565d65);
-    box-shadow: 0 6px 0 #3d4247, 0 12px 24px rgba(70,255,120,.65), inset 0 -6px 10px rgba(0,0,0,.35); }
-  .ovni .disco::before { content: ""; position: absolute; inset: 8px 32px; border-radius: 50%;
+    box-shadow: 0 7px 0 #3d4247, 0 13px 24px rgba(255,205,70,.6), inset 0 -7px 11px rgba(0,0,0,.35); }
+  .ovni .disco::before { content: ""; position: absolute; inset: 10px 48px; border-radius: 50%;
     border: 2px solid rgba(255,255,255,.55);
     background: radial-gradient(ellipse at 50% 30%, #cfd4da, #7f868e); }
 
-  /* cápsula de vidrio celeste */
-  .ovni .capsula { position: absolute; left: 37px; top: 26px; width: 96px; height: 46px;
+  /* cápsula de vidrio azul oscuro, sin brillo */
+  .ovni .capsula { position: absolute; left: 57px; top: 26px; width: 96px; height: 46px;
     border-radius: 50% 50% 50% 50% / 66% 66% 34% 34%;
-    background: radial-gradient(circle at 32% 24%, rgba(255,255,255,.95) 0 7%, rgba(170,230,255,.85) 20%, rgba(70,170,235,.6) 68%, rgba(40,120,200,.7));
-    border: 1px solid rgba(255,255,255,.7);
-    box-shadow: 0 0 18px rgba(120,210,255,.7), inset 0 -12px 16px rgba(20,80,150,.45); }
-  .ovni .capsula::after { content: ""; position: absolute; left: 64%; top: 16%; width: 15px; height: 14px;
-    border-radius: 50%; background: rgba(255,255,255,.35); transform: rotate(-22deg); }
+    background: radial-gradient(circle at 34% 26%, rgba(110,175,225,.9) 0, rgba(45,110,180,.9) 35%, rgba(18,60,125,.92) 75%, rgba(10,38,90,.95));
+    border: 1px solid rgba(170,205,235,.6);
+    box-shadow: inset 0 -12px 16px rgba(5,25,70,.5); }
 
   /* ---------- Textos sobre la escena ---------- */
   #titulo { position: fixed; left: 18px; top: 16px; z-index: 60; font-weight: 900; font-size: 15px;
@@ -104,9 +102,9 @@
 
 <!-- Preloader -->
 <div id="preloader">
-  <svg viewBox="0 0 220 220" aria-label="Cargando">
-    <defs><path id="circulo" d="M110,110 m-92,0 a92,92 0 1,1 184,0 a92,92 0 1,1 -184,0"/></defs>
-    <text><textPath href="#circulo" textLength="574" lengthAdjust="spacing">SEBASTIAN ★ RODRIGUEZ ★ SEBASTIAN ★ RODRIGUEZ ★ </textPath></text>
+  <svg viewBox="0 0 136 136" aria-label="Cargando">
+    <defs><path id="circulo" d="M68,68 m-50,0 a50,50 0 1,1 100,0 a50,50 0 1,1 -100,0"/></defs>
+    <text><textPath href="#circulo" textLength="313" lengthAdjust="spacing">SEBASTIAN ★ RODRIGUEZ ★ </textPath></text>
   </svg>
   <i id="progreso"></i>
   <p id="estado"></p>
