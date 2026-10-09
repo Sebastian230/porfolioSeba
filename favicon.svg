@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#000"/>
+  <!-- medialuna: un disco amarillo al que se le recorta otro -->
+  <mask id="m"><rect width="64" height="64" fill="#fff"/><circle cx="41" cy="25" r="19" fill="#000"/></mask>
+  <circle cx="30" cy="33" r="22" fill="#ffd23c" mask="url(#m)"/>
+</svg>
