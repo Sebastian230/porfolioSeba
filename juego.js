@@ -25,7 +25,7 @@ const EXPERIENCIA = [
   { puesto: "Puesto 3", empresa: "Empresa", periodo: "2017 – 2020" },
 ];
 // Qué extras se muestran (poner true para volver a activar alguno)
-const MOSTRAR = { vacas: true, calabazas: true, pozo: false, trafico: false, experiencia: false };
+const MOSTRAR = { vacas: true, calabazas: true, pozo: true, trafico: false, experiencia: false };
 // El final: un autocine al fondo del maizal. Esto es lo que se proyecta en la pantalla (cada texto es un párrafo).
 const PELICULA = {
   titulo: "Sebastian Rodriguez",
@@ -985,23 +985,25 @@ function crearMaizal() {
 
 // ---------- Pozo de agua ----------
 if (MOSTRAR.pozo) {
-  const R = POZO.r, ALTO = 2.6 + R * 0.55, pozo = new THREE.Group();
+  const R = POZO.r, pozo = new THREE.Group();
   const piedra = new THREE.MeshLambertMaterial({ color: 0x8b8d99, flatShading: true, side: THREE.DoubleSide });
-  const madera = new THREE.MeshLambertMaterial({ color: 0x7a4f28, flatShading: true });
   const pared = new THREE.Mesh(new THREE.CylinderGeometry(R, R + 0.25, 1.6, 10, 1, true), piedra);
   pared.position.y = 0.8;
   const brocal = new THREE.Mesh(new THREE.RingGeometry(R - 0.4, R + 0.12, 10), piedra);
   brocal.rotation.x = -Math.PI / 2;
   brocal.position.y = 1.6;
-  const agua = new THREE.Mesh(new THREE.CircleGeometry(R - 0.2, 20), new THREE.MeshBasicMaterial({ color: 0x0a2550 }));
+  const agua = new THREE.Mesh(new THREE.CircleGeometry(R - 0.2, 20), new THREE.MeshBasicMaterial({ color: 0x3aa85a }));   // verde brillante, como la laguna
   agua.rotation.x = -Math.PI / 2;
   agua.position.y = 1.05;
+  const brilloAgua = new THREE.Mesh(new THREE.PlaneGeometry(R * 3.6, R * 3.6), new THREE.MeshBasicMaterial({
+    map: polvoTexLaguna(), color: 0x6dff7a, opacity: 0.45, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  brilloAgua.rotation.x = -Math.PI / 2;
+  brilloAgua.position.y = 1.75;
   pozo.add(pared, brocal, agua);
-  for (const lado of [-1, 1]) pozo.add(caja3(0.4, ALTO, 0.4, madera, lado * (R + 0.05), ALTO / 2, 0));   // postes
-  pozo.add(caja3(R * 2 + 0.6, 0.26, 0.26, madera, 0, ALTO - 0.7, 0));                                     // travesaño del balde
   pozo.position.set(POZO.x, 0, POZO.z);
   pozo.rotation.y = 0.4;
   pozo.traverse(p => { if (p.isMesh) p.castShadow = true; });
+  pozo.add(brilloAgua);                                   // el resplandor no hace sombra
   escena.add(pozo);
 }
 function caja3(w, h, d, mat, x, y, z) {
@@ -1055,6 +1057,7 @@ if (MOSTRAR.calabazas) {
   const zonas = [
     { cuantas: 26, x: [-70, 50], z: [-72, 76], separacion: 24 },             // el campo del granero
     { cuantas: 10, x: [92, 190], z: [-236, 44], separacion: 32 },            // entre los proyectos
+    { cuantas: 18, x: [50, 94], z: [-200, 76], separacion: 22 },             // la franja entre el granero y los proyectos
     { cuantas: 6, x: [0, 12], z: [-76, 74], separacion: 26, borde: true },   // unas pocas cerca del camino
     { cuantas: 14, x: [-66, 48], z: [-200, -84], separacion: 24 },           // hacia el fondo
     { cuantas: 22, separacion: 17, rio: true },                              // a las dos orillas del río
@@ -1747,17 +1750,14 @@ function crearCartel() {
 
 // ---------- Flecha guía: si te quedás quieto más de 5 segundos, aparece sobre la nave y apunta al enlace más cercano ----------
 const flecha = (() => {
-  const [cv, g] = lienzo(128, 128);
-  g.lineJoin = "round";
-  g.beginPath();                                         // flecha apuntando hacia arriba del dibujo
-  g.moveTo(64, 8); g.lineTo(116, 66); g.lineTo(84, 66); g.lineTo(84, 120); g.lineTo(44, 120); g.lineTo(44, 66); g.lineTo(12, 66); g.closePath();
-  g.fillStyle = "#ffd60a"; g.fill();
-  g.strokeStyle = "#14101f"; g.lineWidth = 9; g.stroke();
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(7, 7), new THREE.MeshBasicMaterial({ map: textura(cv), transparent: true, depthTest: false, depthWrite: false, fog: false }));
-  m.rotation.x = -Math.PI / 2;                           // acostada: la punta mira hacia -z
-  m.renderOrder = 20;
+  // un cilindro con un cono en la punta, rojos y sin sombreado, para que se lea como un dibujo
+  const rojo = new THREE.MeshBasicMaterial({ color: 0xff2a2a, depthTest: false, fog: false });
+  const oscuro = new THREE.MeshBasicMaterial({ color: 0xb01212, depthTest: false, fog: false });
+  const palo = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 5.5, 14).rotateX(-Math.PI / 2).translate(0, 0, 2.2), oscuro);
+  const punta = new THREE.Mesh(new THREE.ConeGeometry(1.7, 5.5, 16).rotateX(-Math.PI / 2).translate(0, 0, -3.2), rojo);   // apunta hacia -z
+  palo.renderOrder = punta.renderOrder = 20;
   const g3 = new THREE.Group();
-  g3.add(m);
+  g3.add(palo, punta);
   g3.visible = false;
   escena.add(g3);
   return { g: g3, quieto: 0, f: 0 };
@@ -1776,8 +1776,10 @@ function moverFlecha(dt, t) {
   if (!F.g.visible) return;
   const dx = (cerca.x - ovni.x) / min, dz = (cerca.z - ovni.z) / min;
   const pop = F.f * (1 + 1.4 * Math.sin(F.f * Math.PI) * (1 - F.f)), vaiven = 6.5 + Math.abs(Math.sin(t * 4)) * 2.6;   // aparece de golpe y empuja hacia el destino
-  F.g.scale.setScalar(pop);
-  F.g.position.set(ovni.x + dx * vaiven, ALTURA_NAVE + 6, ovni.z + dz * vaiven);
+  // aparece como un dibujo animado: a saltos, estirándose y aplastándose antes de acomodarse
+  const paso = Math.round(pop * 8) / 8, estira = 1 + (1 - F.f) * 0.9;
+  F.g.scale.set(paso / Math.sqrt(estira), paso / Math.sqrt(estira), paso * estira);
+  F.g.position.set(ovni.x + dx * (vaiven + 3), ALTURA_NAVE + 2, ovni.z + dz * (vaiven + 3));   // casi a la altura de la nave, así se ve de costado
   F.g.rotation.y = Math.atan2(-dx, -dz);
 }
 
