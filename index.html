@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mi Portfolio</title>
+<style>
+  @font-face { font-family: "Bangers"; src: url("./lib/Bangers.woff2") format("woff2"); font-display: swap; } /* Google Fonts, licencia OFL */
+  @font-face { font-family: "Pacifico"; src: url("./lib/Pacifico.woff2") format("woff2"); font-display: swap; } /* Google Fonts, licencia OFL */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: #0f0b2e; color: #fff;
+    font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif; }
+  canvas#escena { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* ---------- Fondo violeta-azul con polvo (preloader) ---------- */
+  .polvo {
+    background-color: #0f0b2e;
+    background-image:
+      radial-gradient(circle, rgba(200,190,255,.55) 0 1px, transparent 2px),
+      radial-gradient(circle, rgba(170,160,255,.35) 0 1.5px, transparent 2.5px),
+      radial-gradient(ellipse at 50% 40%, #2a1b6b 0, #0f0b2e 70%);
+    background-size: 90px 90px, 140px 140px, 100% 100%;
+    background-position: 0 0, 45px 70px, 0 0;
+  }
+
+  /* ---------- Preloader ---------- */
+  #preloader {
+    position: fixed; inset: 0; z-index: 100; background: #000;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity .7s ease .2s, visibility 0s linear .9s;
+  }
+  /* el nombre en blanco, girando en círculo */
+  #preloader svg { width: min(46vmin, 300px); height: auto; animation: girar 9s linear infinite; }
+  #preloader text { fill: #fff; font: 700 18px "Trebuchet MS", "Segoe UI", system-ui, sans-serif; }
+  #preloader p { position: absolute; font-size: 12px; letter-spacing: .3em; color: #fff; text-transform: uppercase; }
+  #progreso { display: none; }
+  @keyframes girar { to { transform: rotate(360deg); } }
+  body.listo #preloader { opacity: 0; visibility: hidden; }
+
+  /* ---------- OVNI ---------- */
+  .ovni { width: 170px; height: 190px; pointer-events: none; }
+  #ovni { position: fixed; left: 0; top: 0; z-index: 50; margin: -162px 0 0 -85px;
+    transform-origin: 85px 162px; will-change: transform; }
+  .ovni .flota { position: absolute; inset: 0; animation: flotar 2.4s ease-in-out infinite; }
+  .ovni .inclina { position: absolute; inset: 0; transform-origin: 50% 58px; }
+  @keyframes flotar { 50% { transform: translateY(-7px); } }
+
+  /* luz verde en el piso */
+  .ovni .luz { position: absolute; left: 20px; top: 140px; width: 130px; height: 44px; border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(90,255,130,.8), rgba(50,255,100,.25) 50%, transparent 70%);
+    filter: blur(3px); animation: pulso 1.6s ease-in-out infinite; }
+  .ovni .rayo { position: absolute; left: 25px; top: 62px; width: 120px; height: 100px;
+    clip-path: polygon(34% 0, 66% 0, 100% 100%, 0 100%);
+    background: linear-gradient(rgba(90,255,130,.55), rgba(90,255,130,.04)); }
+  @keyframes pulso { 50% { opacity: .6; transform: scale(.92); } }
+
+  /* platillo gris plata */
+  .ovni .disco { position: absolute; left: 0; top: 30px; width: 170px; height: 56px; border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 26%, #ffffff, #e2e6ea 22%, #b4bac1 48%, #858c94 72%, #565d65);
+    box-shadow: 0 6px 0 #3d4247, 0 12px 24px rgba(70,255,120,.65), inset 0 -6px 10px rgba(0,0,0,.35); }
+  .ovni .disco::before { content: ""; position: absolute; inset: 8px 32px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.55);
+    background: radial-gradient(ellipse at 50% 30%, #cfd4da, #7f868e); }
+
+  /* cápsula de vidrio celeste */
+  .ovni .capsula { position: absolute; left: 37px; top: 26px; width: 96px; height: 46px;
+    border-radius: 50% 50% 50% 50% / 66% 66% 34% 34%;
+    background: radial-gradient(circle at 32% 24%, rgba(255,255,255,.95) 0 7%, rgba(170,230,255,.85) 20%, rgba(70,170,235,.6) 68%, rgba(40,120,200,.7));
+    border: 1px solid rgba(255,255,255,.7);
+    box-shadow: 0 0 18px rgba(120,210,255,.7), inset 0 -12px 16px rgba(20,80,150,.45); }
+  .ovni .capsula::after { content: ""; position: absolute; left: 64%; top: 16%; width: 15px; height: 14px;
+    border-radius: 50%; background: rgba(255,255,255,.35); transform: rotate(-22deg); }
+
+  /* ---------- Textos sobre la escena ---------- */
+  #titulo { position: fixed; left: 18px; top: 16px; z-index: 60; font-weight: 900; font-size: 15px;
+    letter-spacing: .3em; text-transform: uppercase; color: #f4f1de; }
+  #titulo small { display: block; margin-top: 5px; font-weight: 600; font-size: 11px; letter-spacing: .22em; color: #b3abe0; }
+  #ayuda { position: fixed; left: 16px; bottom: 16px; z-index: 60; font-size: 13px; color: #b3abe0; }
+  #ayuda kbd { display: inline-block; min-width: 24px; padding: 3px 6px; margin-right: 2px; text-align: center;
+    border: 1px solid #4a3f96; border-bottom-width: 3px; border-radius: 5px; background: #1a1347; color: #eee;
+    font: 700 12px monospace; }
+  #pista { position: fixed; left: 50%; bottom: 54px; z-index: 60; transform: translateX(-50%);
+    padding: 8px 16px; border-radius: 20px; background: rgba(10,107,58,.92); border: 2px solid #4dff7c;
+    font-weight: 700; font-size: 14px; white-space: nowrap; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  #pista.ver { opacity: 1; }
+  #creditos { position: fixed; right: 12px; bottom: 10px; z-index: 60; font-size: 10px; color: #6f66a8; }
+  #marcador { position: fixed; right: 16px; top: 14px; z-index: 60; display: flex; gap: 10px; align-items: center;
+    font: 700 14px monospace; color: #cfc8ff; }
+  #marcador span { padding: 5px 10px; border-radius: 14px; background: rgba(26,19,71,.85); border: 1px solid #4a3f96; }
+  #agarrar { display: none; position: fixed; right: 18px; bottom: 44px; z-index: 60; width: 84px; height: 84px;
+    border-radius: 50%; border: 3px solid #4dff7c; background: rgba(10,107,58,.85); color: #fff;
+    font: 700 13px inherit; touch-action: manipulation; }
+  @media (pointer: coarse) { #agarrar { display: block; } #ayuda { display: none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ovni .flota, .ovni .luz, #preloader svg { animation: none; }
+  }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.min.js" } }</script>
+</head>
+<body>
+
+<canvas id="escena"></canvas>
+
+<!-- Preloader -->
+<div id="preloader">
+  <svg viewBox="0 0 220 220" aria-label="Cargando">
+    <defs><path id="circulo" d="M110,110 m-92,0 a92,92 0 1,1 184,0 a92,92 0 1,1 -184,0"/></defs>
+    <text><textPath href="#circulo" textLength="574" lengthAdjust="spacing">SEBASTIAN ★ RODRIGUEZ ★ SEBASTIAN ★ RODRIGUEZ ★ </textPath></text>
+  </svg>
+  <i id="progreso"></i>
+  <p id="estado"></p>
+</div>
+
+<!-- Ovni (CSS) sobre la escena 3D -->
+<div class="ovni" id="ovni">
+  <div class="luz"></div>
+  <div class="flota"><div class="inclina" id="inclina">
+    <div class="rayo"></div>
+    <div class="disco"></div>
+    <div class="capsula"></div>
+  </div></div>
+</div>
+
+<div id="titulo">Sebastian Rodriguez<small>software hecho en el campo</small></div>
+<div id="pista"></div>
+<div id="marcador"><span id="pozo">🎃 0</span><span id="fps">-- FPS</span></div>
+<button id="agarrar" type="button">Agarrar</button>
+<div id="ayuda"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> mover &nbsp;·&nbsp; <kbd>Espacio</kbd> agarrar / soltar &nbsp;·&nbsp; <kbd>Enter</kbd> abrir proyecto</div>
+<div id="creditos">Granero y vaca: Quaternius (CC0)</div>
+
+<script type="module" src="./juego.js"></script>
+</body>
+</html>
