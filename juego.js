@@ -54,7 +54,10 @@ const PASTO = { x: 2, z: 3, rx: 47, rz: 40 };
 const POZO = { x: 44, z: 10, r: 4.8 };       // pozo de agua, ancho como para tirarle calabazas
 // el maizal sigue mucho más allá de donde llega el ovni, para que no se le vea el final
 const MAIZ = { x0: -540, x1: CRUCE_X + 6, z0: -430, z1: 132 };
-const MARCA = { x: -182, z: -16, ancho: 150, fondo: 84, giro: -0.08 };  // el nombre escrito en el maizal, un poco inclinado
+// El nombre escrito en el maizal, un poco inclinado, y a su izquierda la columna de logos de contacto. Todo va en un mismo rectángulo
+const NOMBRE_ANCHO = 150, LISTA_ANCHO = 30, GIRO_MARCA = -0.08;
+const MARCA = { x: -182 - LISTA_ANCHO / 2 * Math.cos(GIRO_MARCA), z: -16 - LISTA_ANCHO / 2 * Math.sin(GIRO_MARCA),   // el nombre queda centrado en (-182, -16)
+                ancho: NOMBRE_ANCHO + LISTA_ANCHO, fondo: 84, giro: GIRO_MARCA };
 const MARCA_C = Math.cos(MARCA.giro), MARCA_S = Math.sin(MARCA.giro);
 const MARCIANO = { x: 0, z: 0 };             // easter egg: es el punto de la "i" (se ubica al escribir el nombre)
 // piedras de los proyectos: arriba a la derecha, desordenadas [x, z, tamaño, giro]
@@ -124,11 +127,27 @@ const ESPANTA_LUGARES = [
   [6, -96, -Math.PI / 2 + 0.2],                       // entre el granero y el río
   [xDelCamino(-72) + 26, -72, -Math.PI / 2 + 0.2],    // al costado del camino
 ];
+// Bancos de plaza: [x, z, hacia dónde mira]. Dos a la orilla del río, de cara al agua, y uno bajo la farola de la entrada
+const BANCOS = [
+  ...[[44, 1], [72, -1]].map(([i, lado]) => {         // [punto del cauce, en cuál de las dos orillas]
+    const p = CAUCE[i], a = CAUCE[i - 3], b = CAUCE[i + 3], n = Math.hypot(b.x - a.x, b.z - a.z);
+    const nx = -(b.z - a.z) / n * lado, nz = (b.x - a.x) / n * lado, d = p.ancho / 2 + 6;
+    return [p.x + nx * d, p.z + nz * d, Math.atan2(-nx, -nz)];
+  }),
+  [xDelCamino(50) + RUTA_ANCHO / 2 + 13, 51, 0.15],
+];
+// Entradas a las carreras (carrera.html): un holograma en cada punta del campo, lejos de donde arranca la nave
+const CARRERAS = [
+  ["campo", xDelCamino(-205), -205],                  // al final del camino de tierra, antes de los pinos del fondo
+  ["maizal", -268, 58],                               // adelante a la izquierda, metido en el maíz
+  ["bosque", 184, -150],                              // atrás a la derecha, contra el bosque
+  ["secuoyas", 188, 56],                              // adelante a la derecha, donde termina la ruta
+].map(([pista, x, z]) => ({ pista, x, z, y: 6 }));
 // Cartel de madera de bienvenida: abajo a la izquierda de la vista inicial, con dos calabazas al lado
 const CARTEL = { x: -43, z: 68 };
 // Cráneo de oro, al final del pasillo de los proyectos
 const ORO = { x: 139, z: -238 };
-const LIMITES = { x0: -236, x1: 196, z0: -250, z1: 72 };
+const LIMITES = { x0: -285, x1: 196, z0: -250, z1: 72 };
 // El granero está girado: la parte de atrás se va hacia la izquierda y deja ver el techo
 const GIRO_GRANERO = 0.65, SEN = Math.sin(GIRO_GRANERO), COS = Math.cos(GIRO_GRANERO);
 const PUERTA = { x: 20.1 * SEN, z: 20.1 * COS };
@@ -170,7 +189,7 @@ const TEXTOS = {
     creditos: "Granero y vaca: Quaternius (CC0)", logro: "Logro desbloqueado", logroNombre: "Cráneo de oro", logroSub: "Abriendo mi WhatsApp…",
     agarrar: "Agarrar", soltar: "Soltar", cosas: { calabaza: "la calabaza", rana: "la rana", craneo: "el cráneo" },
     darTroll: c => `Espacio ➜ darle ${c} al troll`, tirarPozo: "Espacio ➜ tirar al pozo", soltarP: "Espacio ➜ soltar",
-    asco: "Troll: ¡Puaj! No me gustan las ranas", nam: "¡Ñam!", abrir: n => `Enter ➜ abrir ${n}`,
+    asco: "Troll: ¡Puaj! No me gustan las ranas", nam: "¡Ñam!", abrir: n => `Enter ➜ abrir ${n}`, carreraCampo: "Enter ➜ carrera en el campo", carreraBosque: "Enter ➜ carrera en el bosque", carreraSecuoyas: "Enter ➜ persecución en el bosque gigante", carreraMaizal: "Enter ➜ carrera del maizal",
     vetus: "Enter ➜ entrar a Vetusmoon", link: "Enter ➜ entrar a Linkmaster", copiado: "Correo copiado: ", contacto: "Enter ➜ contactame: ",
     marciano: "👽 ¡Encontraste al marciano!", cineOn: "Rueda del mouse ➜ leer · Enter ➜ cerrar", cineBajar: "Enter ➜ bajar la pantalla",
     oro: "Espacio ➜ agarrar el cráneo de oro", agarrarP: "Espacio ➜ agarrar", error: "No se pudo cargar la escena",
@@ -181,7 +200,7 @@ const TEXTOS = {
     creditos: "Barn and cow: Quaternius (CC0)", logro: "Achievement unlocked", logroNombre: "Golden skull", logroSub: "Opening my WhatsApp…",
     agarrar: "Grab", soltar: "Drop", cosas: { calabaza: "the pumpkin", rana: "the frog", craneo: "the skull" },
     darTroll: c => `Space ➜ give ${c} to the troll`, tirarPozo: "Space ➜ throw it in the well", soltarP: "Space ➜ drop",
-    asco: "Troll: Yuck! I don't like frogs", nam: "Yum!", abrir: n => `Enter ➜ open ${n}`,
+    asco: "Troll: Yuck! I don't like frogs", nam: "Yum!", abrir: n => `Enter ➜ open ${n}`, carreraCampo: "Enter ➜ race on the farm", carreraBosque: "Enter ➜ race in the forest", carreraSecuoyas: "Enter ➜ giant forest chase", carreraMaizal: "Enter ➜ cornfield race",
     vetus: "Enter ➜ go to Vetusmoon", link: "Enter ➜ go to Linkmaster", copiado: "Email copied: ", contacto: "Enter ➜ contact me: ",
     marciano: "👽 You found the alien!", cineOn: "Mouse wheel ➜ read · Enter ➜ close", cineBajar: "Enter ➜ lower the screen",
     oro: "Space ➜ grab the golden skull", agarrarP: "Space ➜ grab", error: "The scene could not be loaded",
@@ -207,7 +226,7 @@ const TEXTOS = {
     creditos: "Celeiro e vaca: Quaternius (CC0)", logro: "Conquista desbloqueada", logroNombre: "Caveira de ouro", logroSub: "Abrindo meu WhatsApp…",
     agarrar: "Pegar", soltar: "Soltar", cosas: { calabaza: "a abóbora", rana: "a rã", craneo: "a caveira" },
     darTroll: c => `Espaço ➜ dar ${c} ao troll`, tirarPozo: "Espaço ➜ jogar no poço", soltarP: "Espaço ➜ soltar",
-    asco: "Troll: Eca! Não gosto de rãs", nam: "Nham!", abrir: n => `Enter ➜ abrir ${n}`,
+    asco: "Troll: Eca! Não gosto de rãs", nam: "Nham!", abrir: n => `Enter ➜ abrir ${n}`, carreraCampo: "Enter ➜ corrida no campo", carreraBosque: "Enter ➜ corrida na floresta", carreraSecuoyas: "Enter ➜ perseguição na floresta gigante", carreraMaizal: "Enter ➜ corrida do milharal",
     vetus: "Enter ➜ entrar na Vetusmoon", link: "Enter ➜ entrar na Linkmaster", copiado: "E-mail copiado: ", contacto: "Enter ➜ fale comigo: ",
     marciano: "👽 Você encontrou o marciano!", cineOn: "Roda do mouse ➜ ler · Enter ➜ fechar", cineBajar: "Enter ➜ baixar a tela",
     oro: "Espaço ➜ pegar a caveira de ouro", agarrarP: "Espaço ➜ pegar", error: "Não foi possível carregar a cena",
@@ -233,7 +252,7 @@ const TEXTOS = {
     creditos: "谷仓和奶牛：Quaternius (CC0)", logro: "成就解锁", logroNombre: "黄金头骨", logroSub: "正在打开我的 WhatsApp…",
     agarrar: "抓取", soltar: "放下", cosas: { calabaza: "南瓜", rana: "青蛙", craneo: "头骨" },
     darTroll: c => `空格 ➜ 把${c}交给巨魔`, tirarPozo: "空格 ➜ 扔进井里", soltarP: "空格 ➜ 放下",
-    asco: "巨魔：呸！我不喜欢青蛙", nam: "啊呜！", abrir: n => `Enter ➜ 打开 ${n}`,
+    asco: "巨魔：呸！我不喜欢青蛙", nam: "啊呜！", abrir: n => `Enter ➜ 打开 ${n}`, carreraCampo: "Enter ➜ 农场赛", carreraBosque: "Enter ➜ 森林赛", carreraSecuoyas: "Enter ➜ 巨木森林追逐", carreraMaizal: "Enter ➜ 玉米地赛",
     vetus: "Enter ➜ 进入 Vetusmoon", link: "Enter ➜ 进入 Linkmaster", copiado: "邮箱已复制：", contacto: "Enter ➜ 联系我：",
     marciano: "👽 你找到了外星人！", cineOn: "鼠标滚轮 ➜ 阅读 · Enter ➜ 关闭", cineBajar: "Enter ➜ 放下银幕",
     oro: "空格 ➜ 抓取黄金头骨", agarrarP: "空格 ➜ 抓取", error: "场景加载失败",
@@ -663,6 +682,43 @@ const rana = (() => {
   escena.add(g);
   return g;
 })();
+// pez: cada tres o cuatro segundos salta uno del agua, en algún punto del río cerca de la nave
+const moverPeces = (() => {
+  const geo = mergeGeometries([
+    new THREE.SphereGeometry(1, 6, 4).scale(0.3, 0.38, 1),                                              // cuerpo, con la cabeza hacia +z
+    new THREE.ConeGeometry(0.55, 0.9, 4).rotateX(Math.PI / 2).scale(0.25, 1, 1).translate(0, 0, -1.3),   // cola
+  ]);
+  const COLORES = [0xff7a1a, 0xff7a1a, 0xf4f1de, 0x7dff6a];           // naranja, alguno blanco y alguno verde flúo
+  const pez = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ flatShading: true }));
+  pez.rotation.order = "YXZ";
+  pez.visible = false;
+  escena.add(pez);
+  // de dónde puede salir: pasando la laguna, hasta donde llega la vista, y no debajo del puente
+  const lugares = CAUCE.slice(22, 150).filter(c => Math.hypot(c.x - PUENTE_X, c.z - PUENTE_Z) > 14);
+  const DURA = 0.9;
+  let espera = 2, salto = DURA, desde = null, dx = 0, dz = 0;
+  return dt => {
+    if (salto >= DURA) {                                 // bajo el agua, esperando
+      pez.visible = false;
+      if ((espera -= dt) > 0) return;
+      espera = 3 - DURA + Math.random();              // entre que empieza un salto y el siguiente: de 3 a 4 segundos
+      const cerca = lugares.filter(c => Math.hypot(c.x - ovni.x, c.z - ovni.z + 30) < 75);   // donde está mirando la cámara
+      const de = cerca.length ? cerca : lugares, c = de[Math.floor(Math.random() * de.length)], i = CAUCE.indexOf(c);
+      const sig = CAUCE[i + 1], n = Math.hypot(sig.x - c.x, sig.z - c.z), corrido = (Math.random() - 0.5) * Math.max(0, c.ancho - 4.5);
+      dx = (sig.x - c.x) / n; dz = (sig.z - c.z) / n;    // salta río abajo
+      desde = { x: c.x - dz * corrido, z: c.z + dx * corrido };
+      pez.material.color.set(COLORES[Math.floor(Math.random() * COLORES.length)]);
+      pez.scale.setScalar(1 + Math.random() * 0.5);
+      pez.rotation.y = Math.atan2(dx, dz);
+      pez.visible = true;
+      salto = 0;
+    }
+    salto += dt;
+    const k = Math.min(1, salto / DURA);
+    pez.position.set(desde.x + dx * k * 4, Math.sin(k * Math.PI) * 2.6 - 0.3, desde.z + dz * k * 4);   // sale del agua y vuelve a entrar
+    pez.rotation.x = -Math.cos(k * Math.PI) * 1;         // de punta hacia arriba al salir y hacia abajo al caer
+  };
+})();
 const trolleable = T.cosas;
 const cercaDelTroll = () => trolleable[enMano?.tipo] && troll.estado === "espera" && Math.hypot(ovni.x - troll.g.position.x, ovni.z - troll.g.position.z) < 16;
 const LINKMASTER = { url: "https://linkmaster-ten.vercel.app/" };
@@ -712,6 +768,7 @@ function moverRio(dt, t) {
   }
 
   texAgua.offset.x -= dt * 0.12;                          // el agua corre
+  moverPeces(dt);
   if (troll.estado !== "espera") { caminarTroll(dt, t); return; }
   const cerca = Math.hypot(ovni.x - PUENTE_X, ovni.z - PUENTE_Z) < 55;
   troll.fuera += ((cerca ? 1 : 0) - troll.fuera) * acercar(dt, 1.6);
@@ -795,16 +852,17 @@ function escribirNombre() {
   const PX = 8;                                      // píxeles por unidad del mundo
   const [cv] = lienzo(MARCA.ancho * PX, MARCA.fondo * PX);
   const g = cv.getContext("2d", { willReadFrequently: true });
+  const X0 = LISTA_ANCHO * PX, W = NOMBRE_ANCHO * PX;   // el nombre ocupa la parte derecha del rectángulo
   const lineas = NOMBRE.split(" ");
   const altoLinea = cv.height / lineas.length;
   let tam = altoLinea * 0.62;
   const fuente = () => g.font = `${tam}px Pacifico, "Brush Script MT", cursive`;
-  while (fuente() && lineas.some(l => g.measureText(l).width > cv.width * 0.92) && tam > 20) tam -= 4;
+  while (fuente() && lineas.some(l => g.measureText(l).width > W * 0.92) && tam > 20) tam -= 4;
   g.fillStyle = g.strokeStyle = "#ff8a1f";
   g.lineWidth = 1.2 * PX; g.lineJoin = "round";      // un poco más gruesa, para que se lea entre el maíz
   let punto = null;
   lineas.forEach((linea, n) => {
-    const x0 = (cv.width - g.measureText(linea).width) / 2, base = altoLinea * (n + 0.72);
+    const x0 = X0 + (W - g.measureText(linea).width) / 2, base = altoLinea * (n + 0.72);
     g.strokeText(linea, x0, base);
     g.fillText(linea, x0, base);
     const k = linea.indexOf("i");
@@ -835,7 +893,40 @@ function escribirNombre() {
     MARCIANO.x = MARCA.x + lx * MARCA_C - lz * MARCA_S;
     MARCIANO.z = MARCA.z + lx * MARCA_S + lz * MARCA_C;
   }
+  // a la izquierda, los logos de contacto en columna, del mismo naranja que el nombre
+  const altoRenglon = cv.height / CONTACTOS.length;
+  CONTACTOS.forEach((c, n) => dibujarLogo(g, c.logo, X0 / 2, altoRenglon * (n + 0.5), 8 * PX));
   mascara = { cv, datos: g.getImageData(0, 0, cv.width, cv.height).data };
+}
+// Logos de contacto, dibujados a mano dentro de un círculo de radio r: un disco naranja con el dibujo en oscuro
+function dibujarLogo(g, logo, cx, cy, r, fondo = "#ff8a1f", trazo = "#3a2a1c") {
+  g.save();
+  g.translate(cx, cy);
+  g.scale(r, r);                                         // de acá en más, el círculo tiene radio 1
+  g.lineJoin = "round";
+  const disco = color => { g.fillStyle = color; g.beginPath(); g.arc(0, 0, 1, 0, 6.3); g.fill(); g.fillStyle = g.strokeStyle = trazo; };
+  if (logo === "whatsapp") {
+    disco(fondo);
+    g.beginPath(); g.moveTo(-0.66, 0.68); g.lineTo(-0.52, 0.2); g.lineTo(-0.18, 0.54); g.fill();   // la colita del globo
+    g.lineWidth = 0.11; g.beginPath(); g.arc(0.02, -0.02, 0.6, 0, 6.3); g.stroke();                // el globo
+    g.lineCap = "round";                                                                           // el tubo del teléfono
+    g.lineWidth = 0.15; g.beginPath(); g.arc(0.2, -0.2, 0.42, 1.75, 2.95); g.stroke();
+    g.lineWidth = 0.25; g.beginPath(); g.arc(0.2, -0.2, 0.42, 1.75, 1.95); g.stroke();
+    g.beginPath(); g.arc(0.2, -0.2, 0.42, 2.75, 2.95); g.stroke();
+  } else if (logo === "correo") {
+    disco(fondo);
+    g.fillRect(-0.6, -0.4, 1.2, 0.8);                                                              // el sobre
+    g.strokeStyle = fondo; g.lineWidth = 0.1;
+    g.beginPath(); g.moveTo(-0.6, -0.4); g.lineTo(0, 0.08); g.lineTo(0.6, -0.4); g.stroke();       // y la solapa
+  } else {                                               // linkedin: las letras "in"
+    disco(fondo);
+    g.beginPath(); g.arc(-0.42, -0.42, 0.16, 0, 6.3); g.fill();
+    g.lineWidth = 0.26; g.lineJoin = "miter";
+    g.beginPath(); g.moveTo(-0.42, -0.13); g.lineTo(-0.42, 0.56); g.stroke();
+    g.beginPath(); g.moveTo(0.0, -0.13); g.lineTo(0.0, 0.56); g.stroke();
+    g.beginPath(); g.moveTo(0.0, 0.56); g.lineTo(0.0, 0.14); g.arc(0.27, 0.14, 0.27, Math.PI, 0); g.lineTo(0.54, 0.56); g.stroke();
+  }
+  g.restore();
 }
 function enLetra(x, z) {
   const dx = x - MARCA.x, dz = z - MARCA.z;              // se deshace la inclinación antes de mirar la máscara
@@ -968,7 +1059,7 @@ function crearMaizal() {
         if (Math.hypot(px - RIO.laguna.x, pz - RIO.laguna.z) < RIO.laguna.r * 1.2 + 3) continue;   // la laguna
         // lejos de donde vuela el ovni se planta más ralo: no se nota y es más liviano
         // lejos de donde vuela el ovni se planta más ralo; el borde se desvanece hacia adentro, sin sumar plantas
-        const adentro = Math.min(px + 270, pz + 150, 95 - pz);
+        const adentro = Math.min(px + 330, pz + 150, 95 - pz);
         if (Math.random() < 0.6 * Math.min(1, Math.max(0, 1 - adentro / 60))) continue;
         o.position.set(px, 0, pz);
         o.rotation.y = Math.random() * 3.14;
@@ -1010,6 +1101,92 @@ function caja3(w, h, d, mat, x, y, z) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
   m.position.set(x, y, z);
   return m;
+}
+
+// ---------- Bancos de plaza y bosque ----------
+// Cada cosa es un solo dibujo: las piezas se unen en una geometría, con el color en los vértices, y se repite por instancias
+const tenir = (geo, hex) => {
+  const c = new THREE.Color(hex), n = geo.attributes.position.count, colores = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) colores.set([c.r, c.g, c.b], i * 3);
+  return geo.setAttribute("color", new THREE.BufferAttribute(colores, 3));
+};
+{
+  const MADERA = 0x7a5230, HIERRO = 0x2a2a31;
+  const tabla = (w, h, d, hex, x, y, z, inclinada = 0) => tenir(new THREE.BoxGeometry(w, h, d).rotateX(inclinada).translate(x, y, z), hex);
+  const partes = [];
+  for (const z of [-0.35, 0.35, 1.05]) partes.push(tabla(7.4, 0.2, 0.6, MADERA, 0, 1.55, z));              // asiento
+  partes.push(tabla(7.4, 0.6, 0.18, MADERA, 0, 2.35, -0.88, -0.2), tabla(7.4, 0.6, 0.18, MADERA, 0, 3.1, -1.03, -0.2));   // respaldo, echado hacia atrás
+  for (const x of [-3.3, 3.3])
+    partes.push(tabla(0.3, 1.55, 0.3, HIERRO, x, 0.775, 1.1), tabla(0.3, 3.4, 0.3, HIERRO, x, 1.7, -0.78, -0.2),       // patas
+                tabla(0.3, 0.2, 2.3, HIERRO, x, 2.35, 0.2), tabla(0.3, 0.7, 0.3, HIERRO, x, 1.95, 1.1));               // apoyabrazos
+  const bancos = new THREE.InstancedMesh(mergeGeometries(partes), new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }), BANCOS.length);
+  const o = new THREE.Object3D();
+  BANCOS.forEach(([x, z, giro], i) => {
+    o.position.set(x, 0, z);
+    o.rotation.y = giro;                                  // el asiento mira hacia +z
+    o.updateMatrix();
+    bancos.setMatrixAt(i, o.matrix);
+  });
+  bancos.castShadow = true;
+  bancos.frustumCulled = false;
+  escena.add(bancos);
+}
+// Bosque de pinos: gigantes y encimados del lado de los proyectos, y al fondo, pasando el río, van creciendo de izquierda
+// a derecha hasta empalmar con los gigantes. Siempre más allá de donde llega la nave. Es de fondo: un único dibujo y sin sombras
+const ARBOLES = [];                                     // [x, z, tamaño] de los pinos sueltos del campo, donde sí vuela la nave
+const BOSQUE = [];                                      // [x, z, separación, tamaño] de cada árbol
+{
+  const orilla = z => LIMITES.x1 + 70 + 5 * Math.sin(z * 0.045) + 3 * Math.sin(z * 0.13 + 2);   // el borde no es una línea recta
+  const fondo = x => LIMITES.z0 - 30 + 5 * Math.sin(x * 0.05) + 3 * Math.sin(x * 0.12 + 1);
+  for (let i = 0; i < 20000 && BOSQUE.length < 440; i++) {
+    const derecha = i % 2 === 1;
+    const hondo = Math.random() ** 1.5 * (derecha ? 300 : 190);   // más tupido adelante, que es lo que se ve
+    let x, z, f = 1;                                    // f: 0 = pino chico, 1 = gigante
+    if (derecha) { z = -560 + Math.random() * 700; x = orilla(z) + hondo; }
+    else {
+      x = -55 + Math.random() * 340;
+      f = THREE.MathUtils.smoothstep(x, -70, 300);     // el cambio de tamaño se reparte a todo lo ancho
+      z = fondo(x) - f * 50 - hondo;                    // los grandes, más atrás: la copa no llega a donde vuela la nave
+    }
+    const sep = 17 + f * 8, tam = 2.4 + f * 7.2;
+    if (x < xDelCamino(z) + 24 || fueraDelRio(x, z) < 15 + f * 12) continue;               // ni sobre el camino ni tapando el agua
+    if (BOSQUE.some(([bx, bz, bsep]) => Math.hypot(x - bx, z - bz) < (sep + bsep) / 2 + hondo * 0.05)) continue;
+    BOSQUE.push([x, z, sep, tam]);
+  }
+  const TRONCO = 0x2a1c12, HOJA = 0x0f2e1c;
+  const copa = (r, h, y) => tenir(new THREE.ConeGeometry(r, h, 6, 1, true).translate(0, y, 0), HOJA);   // sin tapa: de abajo no se ve nunca
+  const geo = mergeGeometries([tenir(new THREE.CylinderGeometry(0.45, 0.7, 3, 5, 1, true).translate(0, 1.5, 0), TRONCO),
+                               copa(3.4, 5, 5), copa(2.7, 4.5, 7.8), copa(1.9, 4, 10.4)]);
+  const pinos = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }), BOSQUE.length);
+  const o = new THREE.Object3D(), c = new THREE.Color();
+  BOSQUE.forEach(([x, z, , base], i) => {
+    const tam = base * (1 + Math.random() * 0.875);
+    o.position.set(x, 0, z);
+    o.rotation.y = Math.random() * 6.28;
+    o.scale.set(tam, tam * (0.9 + Math.random() * 0.35), tam);
+    o.updateMatrix();
+    pinos.setMatrixAt(i, o.matrix);
+    pinos.setColorAt(i, c.setHSL(0.22 + Math.random() * 0.2, 0.3, 0.6 + Math.random() * 0.4));   // cada pino, de un verde apenas distinto
+  });
+  pinos.frustumCulled = false;
+  escena.add(pinos);
+
+  // tres parejas de pinos comunes pegadas al granero, uno alto y uno bajo: a cada costado y atrás. Estos sí hacen sombra
+  // [a lo ancho, hacia el frente, tamaño], en las coordenadas del granero girado
+  for (const [lx, lz, tam] of [[27, -9, 1.6], [28.5, 1, 1.1], [-27, 5, 1.5], [-28.5, -5, 1], [-7, -28, 1.6], [3, -29.5, 1.15]])
+    ARBOLES.push([lx * COS + lz * SEN, -lx * SEN + lz * COS, tam]);
+  const cerca = new THREE.InstancedMesh(geo, pinos.material, ARBOLES.length);
+  ARBOLES.forEach(([x, z, tam], i) => {
+    o.position.set(x, 0, z);
+    o.rotation.y = Math.random() * 6.28;
+    o.scale.setScalar(tam);
+    o.updateMatrix();
+    cerca.setMatrixAt(i, o.matrix);
+    cerca.setColorAt(i, c.setHSL(0.22 + Math.random() * 0.2, 0.3, 0.6 + Math.random() * 0.4));
+  });
+  cerca.castShadow = true;
+  cerca.frustumCulled = false;
+  escena.add(cerca);
 }
 
 // ---------- Cosas que el ovni puede agarrar ----------
@@ -1076,6 +1253,7 @@ if (MOSTRAR.calabazas) {
       const x = (zona.borde ? xDelCamino(z) + RUTA_ANCHO / 2 + 5 : 0) + zona.x[0] + Math.random() * (zona.x[1] - zona.x[0]);
       if (ESPANTA_LUGARES.some(([ex, ez]) => Math.hypot(x - ex, z - ez) < 12) || Math.hypot(x - xDelCamino(50) - RUTA_ANCHO / 2 - 6, z - 50) < 8) continue;   // espantapájaros y farola
       if (!libre(x, z) || enGranero(x, z, 6) || enSendero(x, z, 9)) continue;
+      if (CARRERAS.some(c => Math.hypot(x - c.x, z - c.z) < 11) || BANCOS.some(([bx, bz]) => Math.hypot(x - bx, z - bz) < 10) || ARBOLES.some(([ax, az]) => Math.hypot(x - ax, z - az) < 9)) continue;
       if (MOSTRAR.pozo && Math.hypot(x - POZO.x, z - POZO.z) < POZO.r + 9) continue;
       if (PIEDRAS.some(b => Math.abs(x - b.x) < 24 && z > b.z - 9 && z < b.z + 29)) continue;   // cuadro y su texto
       if (Math.hypot(x - ORO.x, z - ORO.z) < 16 || Math.hypot(x - CARTEL.x, z - CARTEL.z) < 16 || Math.hypot(x + 1, z - 72) < 9) continue;
@@ -1103,6 +1281,7 @@ if (MOSTRAR.calabazas) {
   const afuera = (x, z) => x > LIMITES.x1 + 6 || z < LIMITES.z0 - 6;
   const sumar = (x, z, separacion) => {
     if (!afuera(x, z) || !libre(x, z) || centrosLejos.some(([lx, lz]) => Math.hypot(x - lx, z - lz) < separacion)) return;
+    if (BOSQUE.some(([bx, bz, sep]) => Math.hypot(x - bx, z - bz) < sep / 3 + 3)) return;   // no pegadas a un tronco
     centrosLejos.push([x, z]);
     lejos.push(...grupo(x, z).filter(([gx, gz]) => libre(gx, gz)));
   };
@@ -1459,7 +1638,13 @@ const craneoOro = (() => {
   }
   const rayitas = new THREE.Sprite(new THREE.SpriteMaterial({ map: textura(cv), blending: THREE.AdditiveBlending, depthWrite: false }));
   rayitas.scale.set(17, 17, 1);
-  g.add(rayitas, brillo, craneo);
+  // el logo de WhatsApp flotando arriba: es a donde lleva
+  const [cvLogo, gLogo] = lienzo(256, 256);
+  dibujarLogo(gLogo, "whatsapp", 128, 128, 122, "#ff8a1f", "#5a2c00");
+  const logo = new THREE.Sprite(new THREE.SpriteMaterial({ map: textura(cvLogo), depthWrite: false }));
+  logo.scale.set(3.2, 3.2, 1);
+  logo.position.y = 4.6;
+  g.add(rayitas, brillo, craneo, logo);
   g.position.set(ORO.x, 4, ORO.z);
   g.visible = false;                                     // aparece recién cuando llegás al final de los proyectos
   escena.add(g);
@@ -1750,11 +1935,11 @@ function crearCartel() {
 
 // ---------- Flecha guía: si te quedás quieto más de 5 segundos, aparece sobre la nave y apunta al enlace más cercano ----------
 const flecha = (() => {
-  // un cilindro con un cono en la punta, rojos y sin sombreado, para que se lea como un dibujo
-  const rojo = new THREE.MeshBasicMaterial({ color: 0xff2a2a, depthTest: false, fog: false });
-  const oscuro = new THREE.MeshBasicMaterial({ color: 0xb01212, depthTest: false, fog: false });
-  const palo = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 5.5, 14).rotateX(-Math.PI / 2).translate(0, 0, 2.2), oscuro);
-  const punta = new THREE.Mesh(new THREE.ConeGeometry(1.7, 5.5, 16).rotateX(-Math.PI / 2).translate(0, 0, -3.2), rojo);   // apunta hacia -z
+  // un cilindro corto con un cono en la punta, naranja flúo y sin sombreado, para que se lea como un dibujo
+  const fluo = new THREE.MeshBasicMaterial({ color: 0xff6a00, depthTest: false, fog: false });
+  const oscuro = new THREE.MeshBasicMaterial({ color: 0xd94e00, depthTest: false, fog: false });
+  const palo = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 2.4, 14).rotateX(-Math.PI / 2).translate(0, 0, 0.9), oscuro);
+  const punta = new THREE.Mesh(new THREE.ConeGeometry(1.6, 3.4, 16).rotateX(-Math.PI / 2).translate(0, 0, -2), fluo);   // apunta hacia -z
   palo.renderOrder = punta.renderOrder = 20;
   const g3 = new THREE.Group();
   g3.add(palo, punta);
@@ -1767,7 +1952,7 @@ function moverFlecha(dt, t) {
   F.quieto = moviendo || !listo || cine.on ? 0 : F.quieto + dt;
   // los lugares con enlace: la tienda, Linkmaster, el contacto, el autocine y los proyectos que abren algo
   const destinos = [{ x: PUERTA.x, z: PUERTA.z }, RIO.laguna, { x: (BANDA.x0 + BANDA.x1) / 2, z: BANDA.z }, { x: CINE.x, z: CINE.z + 26 },
-                    ...piedras.filter(p => p.p.url !== "#")];
+                    ...CARRERAS, ...piedras.filter(p => p.p.url !== "#")];
   let cerca = null, min = Infinity;
   for (const d of destinos) { const dist = Math.hypot(d.x - ovni.x, d.z - ovni.z); if (dist < min) { min = dist; cerca = d; } }
   const ver = F.quieto > 5 && min > 16;                  // si ya estás encima de uno, no hace falta
@@ -1863,10 +2048,11 @@ function nuevoDestino(v) {
   for (let i = 0; i < 30; i++) {
     const x = PASTO.x + (Math.random() * 2 - 1) * PASTO.rx, z = PASTO.z + (Math.random() * 2 - 1) * PASTO.rz;
     if (!enParche(PASTO, x, z, 0.82) || (MOSTRAR.pozo && Math.hypot(x - POZO.x, z - POZO.z) < POZO.r + 3)) continue;
-    let choca = false;                              // que el camino no atraviese el granero ni el pozo
+    let choca = false;                              // que el camino no atraviese el granero, el pozo ni un pino
     for (let k = 0; k <= 10 && !choca; k++) {
       const cx = p.x + (x - p.x) * k / 10, cz = p.z + (z - p.z) * k / 10;
-      choca = enGranero(cx, cz, 2) || (MOSTRAR.pozo && Math.hypot(cx - POZO.x, cz - POZO.z) < POZO.r + 2);
+      choca = enGranero(cx, cz, 2) || (MOSTRAR.pozo && Math.hypot(cx - POZO.x, cz - POZO.z) < POZO.r + 2) ||
+              ARBOLES.some(([ax, az]) => Math.hypot(cx - ax, cz - az) < 4.5);
     }
     if (!choca) { v.destino = { x, z }; return; }
   }
@@ -2240,11 +2426,54 @@ function accion() {
   else if (a) { a.estado = "agarrado"; enMano = a; }
 }
 const TIENDA = { url: "https://vetusmoon.com" };
+const sobreCarrera = () => enMano ? null : CARRERAS.find(c => Math.hypot(ovni.x - c.x, ovni.z - c.z) < 11)?.pista ?? null;
+// holograma: una navecita de alambre verde flúo que gira, con un anillo a cuadros, sin luces ni haz
+const hologramas = CARRERAS.map(c => {
+  const verde = extra => new THREE.MeshBasicMaterial({ color: 0x39ff14, transparent: true, opacity: 0.95, side: THREE.DoubleSide, fog: false, ...extra });
+  const alambre = verde({ wireframe: true }), grupo = new THREE.Group();
+  const perfil = [[0, -0.5], [1.2, -0.5], [2.6, 0], [1.3, 0.5], [0.9, 1.3], [0, 1.5]].map(([x, y]) => new THREE.Vector2(x, y));
+  const figura = new THREE.Mesh(new THREE.LatheGeometry(perfil, 10), alambre);
+  figura.rotation.z = 0.25;                            // un poco ladeada, como doblando
+  const [cv, g] = lienzo(128, 16);                     // anillo a cuadros, como bandera de llegada
+  for (let x = 0; x < 16; x++) for (let y = 0; y < 2; y++) if ((x + y) % 2) { g.fillStyle = "#fff"; g.fillRect(x * 8, y * 8, 8, 8); }
+  const cuadros = verde({ map: textura(cv), alphaTest: 0.5 });
+  cuadros.map.wrapS = THREE.RepeatWrapping;
+  cuadros.map.repeat.x = 2;
+  const anillo = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, 0.9, 28, 1, true), cuadros);
+  anillo.position.y = -1.6;
+  grupo.add(anillo);
+  grupo.add(figura);
+  grupo.position.set(c.x, c.y, c.z);
+  escena.add(grupo);
+  return { figura, grupo, alambre, y: c.y };
+});
+function moverHologramas(t) {
+  hologramas.forEach((h, n) => {
+    h.grupo.rotation.y = t * 1.1 + n;
+    h.grupo.position.y = h.y + Math.sin(t * 1.7 + n) * 0.4;
+    h.alambre.opacity = Math.random() < 0.04 ? 0.4 : 0.95;   // cada tanto parpadea, como una proyección
+  });
+}
+const irACarrera = pista => { location.href = `./carrera.html?pista=${pista}&lang=${IDIOMA}`; };
 const sobreGranero = () => !enMano && enGranero(ovni.x, ovni.z, 2);
 // las marcas de los marcianos son el contacto: Enter abre un correo nuevo
 const CORREO = "rodriguez.sebastian.gar@gmail.com";
 const sobreMarcas = () => !enMano && ovni.x > BANDA.x0 - 8 && ovni.x < BANDA.x1 + 22 && Math.abs(ovni.z - BANDA.z) < 22;
 let avisoCorreo = 0;
+// Los logos de contacto a la izquierda del nombre, de arriba abajo, y a dónde lleva cada uno (el correo abre un mailto)
+const LINKEDIN = "https://www.linkedin.com/in/sebrod1998/";
+const CONTACTOS = [
+  { logo: "whatsapp", nombre: "WhatsApp", url: WHATSAPP },
+  { logo: "correo" },
+  { logo: "linkedin", nombre: "LinkedIn", url: LINKEDIN },
+];
+// sobre cuál de los logos está la nave (null: ninguno)
+function sobreContacto() {
+  if (enMano) return null;
+  const dx = ovni.x - MARCA.x, dz = ovni.z - MARCA.z;    // se deshace la inclinación, igual que con las letras
+  const u = dx * MARCA_C + dz * MARCA_S + MARCA.ancho / 2, v = (-dx * MARCA_S + dz * MARCA_C) / MARCA.fondo + 0.5;
+  return u < LISTA_ANCHO + 4 && v >= 0 && v < 1 ? CONTACTOS[Math.floor(v * CONTACTOS.length)] : null;
+}
 function escribirme() {
   // mailto con un enlace de verdad: es lo que el navegador le pasa al programa de correo
   const enlace = Object.assign(document.createElement("a"), { href: `mailto:${CORREO}?subject=${encodeURIComponent(T.asunto)}` });
@@ -2263,8 +2492,10 @@ addEventListener("keydown", e => {
   if (k === " ") { e.preventDefault(); espacioApretado = true; if (!e.repeat) accion(); }
   if (k === "enter" || k === "e") {
     if (cercana) abrir(cercana.p);
+    else if (sobreCarrera()) irACarrera(sobreCarrera());
     else if (sobreGranero()) abrir(TIENDA);
     else if (sobreLaguna()) abrir(LINKMASTER);
+    else if (sobreContacto()) { const c = sobreContacto(); c.url ? window.open(c.url, "_blank", "noopener") : escribirme(); }
     else if (sobreMarcas()) escribirme();
     else if (enElFinal()) alternarCine();
   }
@@ -2466,6 +2697,7 @@ function cuadro() {
   moverCielo(dt, t);
   moverRayos(dt, t);
   moverRio(dt, t);
+  moverHologramas(t);
   moverFinal(dt);
   moverEspantapajaros(dt);
   moverCraneoOro(dt, t);
@@ -2479,9 +2711,11 @@ function cuadro() {
   else if (troll.asco > 0) texto = T.asco;
   else if (troll.mastica > 0) texto = T.nam;
   else if (cercana) texto = cercana.p.url === "#" ? cercana.p.nombre : T.abrir(cercana.p.nombre);
+  else if (sobreCarrera()) texto = { campo: T.carreraCampo, maizal: T.carreraMaizal, bosque: T.carreraBosque, secuoyas: T.carreraSecuoyas }[sobreCarrera()];
   else if (sobreGranero()) texto = T.vetus;
   else if (sobreLaguna()) texto = T.link;
   else if (avisoCorreo > 0) texto = T.copiado + CORREO;
+  else if (sobreContacto()) texto = sobreContacto().url ? T.abrir(sobreContacto().nombre) : T.contacto + CORREO;
   else if (sobreMarcas()) texto = T.contacto + CORREO;
   else if (marciano.estado === "libre" && marciano.asomado > 0.5) texto = T.marciano;
   else if (cine.on) texto = T.cineOn;
